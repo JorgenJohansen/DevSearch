@@ -3,12 +3,13 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 
 from django.db.models import Q
 
 from .models import Project, Tag
 
-from .forms import ProjectForm
+from .forms import ProjectForm, ReviewForm
 
 from .utils import searchProjects, paginateProjects
 
@@ -23,7 +24,20 @@ def projects(request):
 def project(request, pk):
     projectObj = Project.objects.get(id=pk)
     tags = projectObj.tags.all()
-    return render(request, 'projects/single-project.html', {'project': projectObj, 'tags': tags})
+    form = ReviewForm()
+    if request.method == 'POST':
+        form = ReviewForm(request.POST)
+        review = form.save(commit=False)
+        review.project = projectObj
+        review.owner = request.user.profile
+        review.save()
+
+        projectObj.getVoteCount
+
+        messages.success(request, 'Your review was successfully submitted!')
+        return redirect('project', pk=projectObj.id)
+
+    return render(request, 'projects/single-project.html', {'project': projectObj, 'tags': tags, 'form': form})
 
 @login_required(login_url="login")
 def createProject(request):
